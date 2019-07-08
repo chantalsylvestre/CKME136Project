@@ -1,0 +1,71 @@
+---
+title: "Weather Data Cleaning"
+author: "Chantal Sylvestre"
+date: "July 1, 2019"
+output: html_document
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#install.packages("tidyverse")
+
+library(lubridate)
+
+#install.packages("dplyr")
+
+library(dplyr)
+```
+
+```{r}
+#Loading in csv file with weather data
+setwd("D:/Ryerson Certificate in Data Analytics/Capstone Project/Datasets Clean")
+weather_clean = read.csv("Toronto Weather 2017-2018.csv")
+attach(weather_clean) 
+#Veiw dataset to better understand structure and dataset
+View(weather_clean)
+str(weather_clean)
+```
+
+```{r}
+#Extract only necessary attributes
+weather_clean_features <- weather_clean[,c(2:6,24)] 
+View(weather_clean_features)
+str(weather_clean_features)
+
+#format hours to standardize for use in primary key later on 
+hours_r_format = round_date(as.POSIXct(as.character(weather_clean_features$Time), format="%H:%M"),unit= "hour")
+hours_format = format(hours_r_format, "%H:%M")
+
+weather_clean_features$Time = hours_format
+```
+
+```{r}
+#Merge the day, month and year into a single date column:
+
+weather_clean_features["date_weather"] = make_date(weather_clean_features$Year, weather_clean_features$Month, weather_clean_features$Day)
+
+#replace NAs with "Sunny / Overcast", because there is no precipitation recorded during these measurements
+weather_clean_features$Weather = as.character(weather_clean_features$Weather)
+
+weather_clean_features$Weather = replace(weather_clean_features$Weather,which(is.na(weather_clean_features$Weather)),"Sunny/Overcast")
+
+#Concatenate date and hour for primary key to join tables
+
+weather_clean_features["Primary_Key"] = paste(weather_clean_features$date_weather,weather_clean_features$Time, sep = " ", collapse = NULL)
+
+View(weather_clean_features)
+
+```
+
+```{r}
+#Create the final dataset that will be used in the joined tables, renaming headers and selecting features:
+weather_data = weather_clean_features[,c(5:6,8)]
+names(weather_data)[1] <- "temp"
+names(weather_data)[2] <- "weather_type"
+View(weather_data)
+```
+
+
+
+

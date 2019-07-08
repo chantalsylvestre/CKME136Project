@@ -1,0 +1,87 @@
+---
+title: "TTC Delay Data Cleaning"
+author: "Chantal Sylvestre"
+date: "July 1, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages("tidyverse")
+
+library(lubridate)
+#install.packages("dplyr")
+
+library(dplyr)
+```
+
+```{r}
+#Loading in csv file with data
+setwd("D:/Ryerson Certificate in Data Analytics/Capstone Project/Datasets Clean")
+delay_clean = read.csv("TTC Delay Data 2017-2018.csv")
+attach(delay_clean) 
+#Veiw dataset to better understand structure and dataset
+View(delay_clean)
+str(delay_clean)
+```
+
+```{r}
+#Extract only necessary attributes
+delay_clean_features <- delay_clean[,c(1,3,5,7,9)] 
+View(delay_clean_features)
+```
+
+```{r}
+#filer out only delay locations within the pilot study area, 
+#this is a two step process, first filtering for delays on king 
+king = grepl('\\b(King)\\b',delay_clean_features$Location, ignore.case = T)
+delay_clean_features_k = delay_clean_features[king,]
+
+#then filtering for intersections included in the pilot going East bound or West bound only
+king2 = grepl('\\b(Bathurst|Portland|Spadina|Simcoe|Peter|John|York|University|Bay|Yonge|Church|Jarvis)\\b',delay_clean_features_k$Location, ignore.case = T)
+delay_clean_features_k2 = delay_clean_features_k[king2,]
+
+#filtering for West or East bound delays only
+west_east = grepl('\\b(W|E)\\b',delay_clean_features_k2$Direction, ignore.case = T)
+delay_clean_features_k2EW = delay_clean_features_k2[west_east,]
+
+#Using gsub to standardize the directions to either "EAST" or "WEST"
+delay_clean_features_k2EW$Direction = gsub("W/B|B/W", "WEST", delay_clean_features_k2EW$Direction)
+delay_clean_features_k2EW$Direction = gsub("E/B|B/E", "EAST", delay_clean_features_k2EW$Direction)
+
+
+View(delay_clean_features_k2EW)
+str(delay_clean_features_k2EW)
+```
+
+```{r}
+#Rounding the time to the nearest hour
+hours_rounded = round_date(as.POSIXct(as.character(delay_clean_features_k2EW$Time), format="%H:%M:%S %p"),unit= "hour")
+
+#format to standardize hours for primary key
+hours_rounded2 = format(hours_rounded, "%H:%M")
+
+#Add as a column in data set
+delay_clean_features_k2EW["Round_Hours"] = hours_rounded2
+```
+
+```{r}
+#Create primary key by concatenating the date and hour
+delay_clean_features_k2EW["Primary_Key"] =paste(delay_clean_features_k2EW$Report.Date,delay_clean_features_k2EW$Round_Hours, sep = " ", collapse = NULL)
+```
+
+```{r}
+#Group by date and time to get a count of delays in that hour and the average delay time this is the dataset that will be used in the joined table for the model. 
+
+delay_data = delay_clean_features_k2EW %>%
+  group_by(Primary_Key) %>%
+  summarize(avg_delay = mean(Min.Delay), no_of_delays = n())
+
+View(delay_data)
+
+```
+
+

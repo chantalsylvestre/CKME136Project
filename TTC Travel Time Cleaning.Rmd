@@ -1,0 +1,60 @@
+---
+title: "TTC Travel Time Cleaning"
+author: "Chantal Sylvestre"
+date: "July 1, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages("tidyverse")
+
+library(lubridate)
+
+#install.packages("dplyr")
+
+library(dplyr)
+
+```
+
+```{r}
+#Loading in csv file with data
+setwd("D:/Ryerson Certificate in Data Analytics/Capstone Project/Datasets Clean")
+travel_clean = read.csv("TTC_TravelTime_2017_2018.csv")
+attach(travel_clean) 
+#Veiw dataset to better understand structure and dataset
+View(travel_clean)
+str(travel_clean)
+```
+
+```{r}
+#Extract only necessary attributes
+travel_clean <- travel_clean[,c(5,10:14)] 
+View(travel_clean)
+
+```
+
+```{r}
+#Rounding the time to the nearest hour
+hours_r= round_date(as.POSIXct(as.character(travel_clean$TripTime), format="%H:%M:%S"),unit= "hour")
+#format to show only the hours
+hours_r2 = format(hours_r, "%H:%M")
+
+#Add as a column in data set
+travel_clean["Round_Hours"] = hours_r2
+
+```
+
+```{r}
+#Create primary key
+travel_clean["Primary_Key"] =paste(travel_clean$ObservedDate,travel_clean$Round_Hours, sep = " ", collapse = NULL)
+```
+
+```{r}
+#Aggregate by date and time to normalize to join with other datasets, this will provide average speed, delay time and the number of streetcars per hour. This is the final table that will be used in the joined table.
+
+travel_data = travel_clean %>%
+  group_by(Primary_Key, Direction) %>%
+  summarize(avg_travel_time = mean(RunningTime), avg_speed = mean(Speed), no_of_streetcars = n())
+View(travel_data)
+```
