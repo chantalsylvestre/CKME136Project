@@ -6,22 +6,6 @@ Dataset
 There are three datasets used for this project. Two datasets are from the City of Toronto Open Data (www.toronto.ca/open), more specifically, TTC travel and delay information for the King St. Pilot Project from 2017 – 2018. The third dataset is weather data for Toronto, Ontario provided by the Government of Canada (http://climate.weather.gc.ca). From this dataset the daily temperature and precipitation information from 2017 – 2018 will be used.
 The datasets will be restructured and grouped by certain time of day ranges and then joined into one table for exploratory analysis and data modelling. The dataset will focus only on weekday information, thus, excluding weekends and holidays. Our area of interest will be anywhere between King St. and Bathurst St and King St. and Jarvis. We will be looking at 2017 and 2018 only, providing almost a year pre pilot project and post pilot project (the project started Nov 12 2017).
 
-Table 1: Dataset Attribute Descriptions
-Attribute	Description
-date	Date of measurements
-time_of_day	Time of day of measurements: Early, AM Peak, Mid, PM Peak, Evening, Late
-day_of_week	Day of the week, eg. Monday, Tuesday, Wednesday.
-no_of_screetcars	The number of streetcars on the route during the measurement period
-direction	The direction the streetcar was travelling, either Eastbound or Westbound
-avg_travel_time	The average travel time of street cars on the route during the measurement period.
-no_of_delays	The number of delays the occurred on the route during the measurement period.
-avg_delay_time	The average amount of delay time during the measurement period.
-avg_speed	The average speed of the streetcars on the route during the measurement period.
-temp	The average temperature during the measurement period.
-weather_type	The type of weather during that period, either sunny/overcast, rain, snow, or freezing rain etc.
-pilot_non_pilot	Label to indicate if the measurement occurred during the pilot or before the pilot project.
-
-
 Approach
 This project’s approach starts with importing, cleaning and restructuring the data. Data cleaning includes removing missing values, standardizing naming conventions and grouping measurements based on certain times of the day. Then, exploratory analysis is performed to become familiar with the dataset, identify outliers and relationships between attributes. Then data modelling will be used and then the results will be interpreted into meaningful observations. 
 
