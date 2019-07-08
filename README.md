@@ -1,6 +1,4 @@
-# CKME136Project
-Data Mining Transit Information from King St Pilot Project
-Data Mining Transit Information from King St Pilot Project 
+# CKME136Project: Data Mining Transit Information from King St Pilot Project
 Introduction
 Transportation impacts the lives of all Torontonians. While there is no easy answer to transport people more efficiently in the downtown core there has been an interesting pilot project on one of Toronto’s busiest streets, King Street. The King Street pilot project aims to improve transit reliability, speed, and capacity by giving transit priority on King Street from Bathurst Street to Jarvis Street. This capstone project will examine the effects of the King Street Pilot project has made on streetcar transportation in that area. This project will seek to quantify the changes the pilot project has made on travel times, and delays on the 504 streetcar route. Some example questions are: Did the pilot make an improvement to TTC travel time or reduce delays on that route? Data mining techniques using machine learning algorithms like clustering, logistic regression and classification will be used to find meaningful patterns in the dataset. 
 
