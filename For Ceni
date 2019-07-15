@@ -1,4 +1,4 @@
 In this repository you will find:
 1. the csv files and the R files used to clean the data, 
 2. an R file which joins the tables together into one dataset for analysis (includes descriptive statistics).
-3. an R file with the KNN model and initial resutlts
+3. an R file with the KNN model, logistic regresson model and initial resutlts
