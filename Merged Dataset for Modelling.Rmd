@@ -1,0 +1,155 @@
+---
+title: "Merged Dataset for Modelling"
+author: "Chantal Sylvestre"
+date: "July 7, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+
+# Join tables from cleaned up datasets, weather, travel and delay data:
+
+join = merge(x = weather_data, y = travel_data, by = "Primary_Key", all = TRUE)
+
+model_data = merge(x = join, y = delay_data, by = "Primary_Key", all = TRUE)
+
+View(model_data)
+
+summary(model_data)
+
+
+#Add day of the week
+
+model_data["weekday"] = strftime(model_data$Primary_Key, '%A')
+
+#Adds labels depending on the time of day:
+library(stringr)
+
+model_data["time_of_day"] = word(model_data$Primary_Key,-1)
+
+
+model_data$time_of_day = gsub("03:00|04:00|05:00|06:00", "EARLY(3AM - 6AM)", model_data$time_of_day)
+
+model_data$time_of_day = gsub("07:00|08:00|09:00|10:00", "AM (7am-10am)", model_data$time_of_day)
+
+model_data$time_of_day = gsub("11:00|12:00|13:00|14:00|15:00", "MID (11am-3pm)", model_data$time_of_day)
+
+model_data$time_of_day = gsub("16:00|17:00|18:00", "PM (4pm-7pm)", model_data$time_of_day)
+
+model_data$time_of_day = gsub("19:00|20:00|21:00|22:00", "EVENING (8pm-10pm)", model_data$time_of_day)
+
+model_data$time_of_day = gsub("23:00|00:00|01:00|02:00", "LATE (11pm-2am)", model_data$time_of_day)
+
+#Add label PILOT or NON PILOT
+
+model_data["pilot_nonpilot"] = ifelse(grepl("^2018|2017-12|2017-11-1", model_data$Primary_Key), "Pilot", "Non Pilot")
+
+ gsub("^2017","NON PILOT",model_data$Primary_Key)
+ 
+#Filter out Weekends 
+
+removeweekends = grepl('monday|tuesday|wednesday|thursday|friday',model_data$weekday, ignore.case = T)
+
+model_data = model_data[removeweekends,]
+```
+
+```{r}
+# Convert into numeric values for model
+#Convert day of week
+model_data$weekday = as.factor(model_data$weekday)
+
+model_data["weekday_c"] = unclass(model_data$weekday)
+
+
+#Convert time of day
+model_data$time_of_day = as.factor(model_data$time_of_day)
+
+model_data["time_of_day_c"] = unclass(model_data$time_of_day)
+
+
+#Convert type of weather
+model_data$weather_type = as.factor(model_data$weather_type)
+
+model_data["weather_type_c"] = unclass(model_data$weather_type)
+
+#Convert pilot/nonpilot to binary value
+model_data["pilot_nonpilot_bi"] = ifelse(grepl("Non Pilot", model_data$pilot_nonpilot), 1, 0)
+
+```
+
+```{r}
+#Export to csv to use for modeling
+write.csv(model_data,"D:/Ryerson Certificate in Data Analytics/Capstone Project/Datasets Clean/model_data.csv", row.names = TRUE) 
+
+```
+
+```{r}
+#Descriptive Anaylsis
+summary(model_data_cor)
+
+summary(model_data)
+```
+
+```{r}
+#Correlation Matrix
+model_data_cor = model_data[c(2,5:9,13:16)]
+model_data_cor = na.omit(model_data_cor)
+modelcor <-cor(model_data_cor)
+modelcor
+#install.packages("corrplot")
+library(corrplot)
+corrplot(modelcor, type = "lower")
+```
+
+
+```{r}
+#Scaled dataset, boxplots
+
+boxplot(model_data$temp,model_data$avg_travel_time, model_data$avg_speed, model_data$no_of_streetcars, model_data$no_of_delays)
+
+scaled = scale(model_data_cor)
+
+scaled = data.frame(scaled)
+
+boxplot(scaled)
+
+#Outliers removed
+
+outliers <- boxplot(scaled$avg_delay, plot=FALSE)$out
+
+outliers_removed <- scaled[-which(scaled$avg_delay %in% outliers),]
+
+boxplot(outliers_removed)
+
+```
+
+```{r}
+#Histograms to see distributions of dataset
+
+library(tidyr)
+library(ggplot2)
+
+ggplot(gather(model_data_cor), aes(value)) + 
+    geom_histogram(bins = 10) + 
+    facet_wrap(~key, scales = 'free_x')
+```
+
+```{r}
+#Scatter plots with measurements from pilot coloured red and non pilot are black
+colors <- c('black', 'red')[unclass(model_data$pilot_nonpilot_bi)]
+
+cols <- character(nrow(model_data_cor))
+cols[] <- "red"
+cols[model_data_cor$pilot_nonpilot_bi == "0"] <- "black"
+
+pairs(model_data_cor, col=cols)
+```
+
+
+
+
