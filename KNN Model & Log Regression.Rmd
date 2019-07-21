@@ -1,0 +1,204 @@
+
+---
+title: "K-Nearest Neighbour Model"
+
+---
+
+
+```{r setup, include=FALSE}
+library("class")
+library("gmodels")
+```
+
+```{r}
+#Loading in csv file with data
+setwd("D:/Ryerson Certificate in Data Analytics/Capstone Project/Datasets Clean")
+model_data = read.csv("model_data.csv")
+```
+
+```{r}
+knn_model_data = model_data[c(3, 6:10, 14:17)]
+
+knn_model_data = na.omit(knn_model_data)
+
+str(knn_model_data)
+
+View(knn_model_data)
+
+```
+
+Splitting the dataset into training and test set.
+```{r}
+train_index <- sample(1:nrow(knn_model_data), 0.7 * nrow(knn_model_data))
+train.set <- knn_model_data[train_index,]
+test.set  <- knn_model_data[-train_index,]
+```
+
+Remove lables from datasets
+```{r}
+train.set_new <- train.set[-10]
+test.set_new <- test.set[-10]
+```
+
+Store labels in a separate variable
+```{r}
+model_train_labels <- train.set$pilot_nonpilot_bi
+model_test_labels <- test.set$pilot_nonpilot
+```
+
+Test model using k=5
+```{r}
+
+model_knn_prediction <- knn(train.set_new, test.set_new, cl = as.factor(model_train_labels), k = 5) 
+
+dim(train.set_new)
+dim(test.set_new)
+dim(model_train_labels)
+length(model_train_labels)
+dim(model_data)
+```
+
+Confusion matrix.
+```{r}
+CrossTable(x=model_test_labels, y=model_knn_prediction, prop.chisq=FALSE)
+```
+
+
+```{r}
+model_knn_prediction <- knn(train = train.set_new, test = test.set_new, cl= model_train_labels, k = 4) 
+```
+
+Let's see the confusion matrix.
+```{r}
+anova(model_knn_prediction, test="Chisq")
+
+```
+
+```{r}
+calc_class_err = function(actual, predicted) {
+  mean(actual != predicted)
+}
+
+
+calc_class_err(actual    = model_test_labels,
+               predicted = knn(train = scale(train.set_new), 
+                               test  = scale(test.set_new), 
+                               cl    = model_train_labels, 
+                               k     = 5))
+
+set.seed(10)
+k_to_try = 1:100
+err_k = rep(x = 0, times = length(k_to_try))
+
+for (i in seq_along(k_to_try)) {
+  pred = knn(train = scale(train.set_new), 
+             test  = scale(test.set_new), 
+             cl    = model_train_labels, 
+             k     = k_to_try[i])
+  err_k[i] = calc_class_err(model_test_labels, pred)
+}
+
+
+
+```
+
+```{r}
+
+# plot error vs choice of k
+plot(err_k, type = "b", col = "dodgerblue", cex = 1, pch = 20, 
+     xlab = "k, number of neighbors", ylab = "classification error",
+     main = "(Test) Error Rate vs Neighbors")
+# add line for min error seen
+abline(h = min(err_k), col = "darkorange", lty = 3)
+# add line for minority prevalence in test set
+abline(h = mean(model_test_labels == "Yes"), col = "grey", lty = 2)
+
+```
+
+```{r}
+library(cluster)
+library(fpc)
+
+clus= kmeans(test.set_new, centers = 14)
+clusplot(test.set_new, clus$cluster)
+
+
+
+with(test.set_new, pairs(test.set_new, col=c(1:3)[clus$cluster])) 
+
+```
+
+
+Logistic Regression Analysis
+```{r}
+
+logistic_model2 <- glm(knn_model_data$pilot_nonpilot_bi ~.,family=binomial(link='logit'),data=knn_model_data)
+anova(logistic_model2, test="Chisq")
+```
+```{r}
+predictTrain = predict(logistic_model2, type="response")
+
+table(knn_model_data$pilot_nonpilot_bi, predictTrain > 0.5)
+
+#Accuracy is ~65%
+(829+118)/1435
+
+```
+```{r}
+logistic_model3 <- glm(knn_model_data$pilot_nonpilot_bi ~temp+avg_travel_time+no_of_delays+weather_type_c,family=binomial(link='logit'),data=knn_model_data)
+
+predictTrain2 = predict(logistic_model3, type="response")
+
+table(knn_model_data$pilot_nonpilot_bi, predictTrain2 > 0.3)
+
+(155+481)/(833+49+463+90)
+
+```
+
+```{r}
+# Install and load ROCR package
+#install.packages("ROCR")
+library(ROCR)
+
+ROCRpred = prediction(predictTrain, knn_model_data$pilot_nonpilot_bi)
+
+ROCRperf = performance(ROCRpred, "tpr", "fpr")
+
+plot(ROCRperf, colorize=TRUE, print.cutoffs.at=seq(0,1,by=0.1), text.adj=c(-0.2,1.7))
+
+```
+
+
+Naive Bayes
+```{r}
+library(e1071)
+#install.packages("caret")
+
+library(caret)
+y = as.factor(model_train_labels)
+x = train.set[5:6]
+model = train(x,y,'nb',trControl=trainControl(method='cv',number=10))
+
+model = train(train.set_new,y,'nb',trControl=trainControl(method='cv',number=10))
+
+```
+
+```{r}
+#Building a model
+#split data into training and test data sets
+indxTrain <- createDataPartition(y = knn_model_data$pilot_nonpilot_bi,p = 0.75,list = FALSE)
+training <- knn_model_data[indxTrain,]
+testing <- knn_model_data[-indxTrain,]
+ 
+#Check dimensions of the split
+ 
+prop.table(table(knn_model_data$pilot_nonpilot_bi)) * 100
+ 
+ 
+prop.table(table(training$pilot_nonpilot_bi)) * 100
+ 
+
+prop.table(table(testing$pilot_nonpilot_bi)) * 100
+ 
+
+```
